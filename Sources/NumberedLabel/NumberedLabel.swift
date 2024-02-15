@@ -6,14 +6,14 @@ import SwiftUI
 
 
 public struct NumberedLabel: View {
-	public init(title: String, iconName: String? = nil, count: Int? = nil) {
+	public init(title: String?, iconName: String? = nil, count: Int? = nil) {
 		self.title = title
 		self.iconName = iconName
 		self.count = count
 	}
 	
 	private let iconName: String?
-	private let title: String
+	private let title: String?
 	private let count: Int?
 	
 	@Environment(\.numberedLabelSize) private var size
@@ -27,13 +27,16 @@ public struct NumberedLabel: View {
 					.font(size.iconfont)
 					.symbolVariant(style.iconVariant)
 			}
-			HStack(alignment: .firstTextBaseline, spacing: size.spacing) {
-				Text(title)
-					.font(size.titlefont)
-				
-				if let count {
-					Text("\(count)")
-						.font(size.countFont)
+			if title != nil || count != nil {
+				HStack(alignment: .firstTextBaseline) {
+					if let title {
+						Text(title)
+							.font(size.titlefont)
+					}
+					if let count {
+						Text("\(count)")
+							.font(size.countFont)
+					}
 				}
 			}
 		}
