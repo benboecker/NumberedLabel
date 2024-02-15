@@ -10,245 +10,225 @@ public struct NumberedLabel: View {
 		self.title = title
 		self.iconName = iconName
 		self.count = count
-		self.style = .disabled
-		self.size = .medium
-	}
-
-	private init(title: String, iconName: String?, count: Int?, size: Size, style: Style) {
-		self.title = title
-		self.iconName = iconName
-		self.size = size
-		self.style = style
-		self.count = count
-	}
-
-	public enum Size {
-		case small, medium
-	}
-	
-	public enum Style {
-		case filled(Color)
-		case tinted(Color)
-		case bordered(Color)
-		case disabled
 	}
 	
 	private let iconName: String?
 	private let title: String
 	private let count: Int?
-	private let size: Size
-	private let style: Style
-
+	
+	@Environment(\.numberedLabelSize) private var size
+	@Environment(\.numberedLabelStyle) private var style
+	@Environment(\.numberedLabelShape) private var shape
+	
 	public var body: some View {
-		HStack(alignment: .firstTextBaseline, spacing: iconSpacing) {
+		HStack(alignment: .center, spacing: size.spacing) {
 			if let iconName {
 				Image(systemName: iconName)
-					.font(iconfont)
-					.symbolVariant(iconVariant)
+					.font(size.iconfont)
+					.symbolVariant(style.iconVariant)
 			}
-			HStack(alignment: .firstTextBaseline) {
+			HStack(alignment: .firstTextBaseline, spacing: size.spacing) {
 				Text(title)
-					.font(titlefont)
+					.font(size.titlefont)
 				
 				if let count {
 					Text("\(count)")
-						.font(countFont)
+						.font(size.countFont)
 				}
 			}
 		}
-		.foregroundStyle(foregroundColor)
-		.padding(.vertical, verticalPadding)
-		.padding(.horizontal, horizontalPadding)
-		.frame(minHeight: minHeight)
-		.background(alignment: .center) {
-			switch style {
-			case .filled(let color):
-				RoundedRectangle(cornerRadius: cornerRadius)
-					.fill(color.gradient)
-			case .tinted(let color):
-				RoundedRectangle(cornerRadius: cornerRadius)
-					.fill(color.quinary)
-			case .disabled:
-				RoundedRectangle(cornerRadius: cornerRadius)
-					.fill(Color.secondary.quinary)
-			case .bordered:
-				RoundedRectangle(cornerRadius: cornerRadius)
-					.stroke(strokeColor, lineWidth: 1.5)
-			}
-		}
+		.foregroundStyle(style.foregroundColor)
+		.padding(.vertical, size.verticalPadding)
+		.padding(.horizontal, size.horizontalPadding)
+		.frame(minHeight: size.minHeight)
+		.background(backgroundView)
 	}
 }
 
-public extension NumberedLabel {
-	func size(_ size: Size) -> NumberedLabel {
-		NumberedLabel(title: title, iconName: iconName, count: count, size: size, style: style)
-	}
-	
-	func style(_ style: Style) -> NumberedLabel {
-		NumberedLabel(title: title, iconName: iconName, count: count, size: size, style: style)
-	}
-}
 
+// MARK: - Private properties and functions
 private extension NumberedLabel {
-	var minHeight: CGFloat {
-		switch size {
-		case .medium: 32
-		case .small: 20
-		}
-	}
-	
-	var titlefont: Font {
-		switch size {
-		case .medium: .system(.subheadline, design: .rounded, weight: .semibold)
-		case .small: .system(.caption2, design: .rounded, weight: .semibold)
-		}
-	}
-	
-	var iconfont: Font {
-		switch size {
-		case .medium: .system(.footnote, design: .rounded, weight: .semibold)
-		case .small: .system(.caption2, design: .rounded, weight: .semibold)
-		}
-	}
-	
-	var countFont: Font {
-		switch size {
-		case .medium: .system(.footnote, weight: .black)
-		case .small: .system(.caption2, design: .rounded, weight: .semibold)
-		}
-	}
-	
-	var cornerRadius: CGFloat {
-		switch size {
-		case .medium: 8
-		case .small: 6
-		}
-	}
-	
-	var iconSpacing: CGFloat {
-		switch size {
-		case .medium: 6
-		case .small: 4
-		}
-	}
-	
-	var horizontalPadding: CGFloat {
-		switch size {
-		case .medium: 8
-		case .small: 6
-		}
-	}
-	
-	var verticalPadding: CGFloat {
-		switch size {
-		case .medium: 4
-		case .small: 4
-		}
-	}
-	
-	var foregroundColor: Color {
+	@ViewBuilder var backgroundView: some View {
 		switch style {
-		case .filled: Color.white
-		case .tinted(let color): color
-		case .bordered(let color): color
-		case .disabled: Color(white: 0.6)
-		}
-	}
-
-	var strokeColor: Color {
-		switch style {
-		case .filled: .clear
-		case .tinted: .clear
-		case .bordered(let color): color
-		case .disabled: .clear
+		case .filled(let color):
+			AnyShape(backgroundShape)
+				.fill(color.gradient)
+		case .tinted(let color):
+			AnyShape(backgroundShape)
+				.fill(color.quinary)
+		case .disabled:
+			AnyShape(backgroundShape)
+				.fill(Color.secondary.quinary)
+		case .bordered where shape == .capsule:
+			Capsule()
+				.strokeBorder(style.strokeColor, lineWidth: 1.5)
+		case .bordered:
+			RoundedRectangle(cornerRadius: size.cornerRadius)
+				.strokeBorder(style.strokeColor, lineWidth: 1.5)
 		}
 	}
 	
-	var iconVariant: SymbolVariants {
-		switch style {
-		case .bordered: .none
-		default: .fill
+	var backgroundShape: any SwiftUI.Shape {
+		switch shape {
+		case .roundedRect: 
+			RoundedRectangle(cornerRadius: size.cornerRadius)
+		case .capsule:
+			Capsule()
 		}
 	}
 }
 
-private struct PreviewTag: Identifiable {
+
+private struct PreviewData: Identifiable {
 	let id = UUID()
 	let title: String
 	let count: Int?
 	let color: Color
 	let iconName: String?
 	
-	static let tags = [
-		PreviewTag(title: "Arbeit", count: 23, color: .indigo, iconName: "desktopcomputer"),
-		PreviewTag(title: "Studium", count: 24, color: .mint, iconName: nil),
-		PreviewTag(title: "Haushalt", count: 8, color: .orange, iconName: "house"),
-		PreviewTag(title: "Sport", count: nil, color: .cyan, iconName: "sportscourt"),
-		PreviewTag(title: "Swift", count: 126, color: .purple, iconName: "swift"),
+	static let data = [
+		PreviewData(title: "Work", count: 23, color: .indigo, iconName: "desktopcomputer"),
+		PreviewData(title: "University", count: 24, color: .mint, iconName: nil),
+		PreviewData(title: "Household", count: 8, color: .orange, iconName: "house"),
+		PreviewData(title: "Sports", count: nil, color: .cyan, iconName: "sportscourt"),
+		PreviewData(title: "Swift", count: 126, color: .purple, iconName: "swift"),
 	]
 }
 
 
-#Preview("Tags Medium", traits: .fixedLayout(width: 700, height: 350)) {
+#Preview("Medium", traits: .fixedLayout(width: 700, height: 350)) {
 	HStack(spacing: 32) {
 		VStack(spacing: 32) {
-			ForEach(PreviewTag.tags) { tag in
-				NumberedLabel(title: tag.title, iconName: tag.iconName, count: tag.count)
-					.style(.filled(tag.color))
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.filled(data.color))
 			}
 		}
 		VStack(spacing: 32) {
-			ForEach(PreviewTag.tags) { tag in
-				NumberedLabel(title: tag.title, iconName: tag.iconName, count: tag.count)
-					.style(.tinted(tag.color))
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.tinted(data.color))
 			}
 		}
 		VStack(spacing: 32) {
-			ForEach(PreviewTag.tags) { tag in
-				NumberedLabel(title: tag.title, iconName: tag.iconName, count: tag.count)
-					.style(.bordered(tag.color))
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.bordered(data.color))
 			}
 		}
 		VStack(spacing: 32) {
-			ForEach(PreviewTag.tags) { tag in
-				NumberedLabel(title: tag.title, iconName: tag.iconName, count: tag.count)
-					.style(.disabled)
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.disabled)
 			}
 		}
 	}
 	.padding()
 }
 
-#Preview("Tags Small", traits: .fixedLayout(width: 700, height: 350)) {
+#Preview("Small", traits: .fixedLayout(width: 700, height: 350)) {
 	HStack(spacing: 32) {
 		VStack(spacing: 32) {
-			ForEach(PreviewTag.tags) { tag in
-				NumberedLabel(title: tag.title, iconName: tag.iconName, count: tag.count)
-					.size(.small)
-					.style(.filled(tag.color))
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.filled(data.color))
+					.numberedLabelSize(.small)
 			}
 		}
 		VStack(spacing: 32) {
-			ForEach(PreviewTag.tags) { tag in
-				NumberedLabel(title: tag.title, iconName: tag.iconName, count: tag.count)
-					.size(.small)
-					.style(.tinted(tag.color))
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.tinted(data.color))
+					.numberedLabelSize(.small)
 			}
 		}
 		VStack(spacing: 32) {
-			ForEach(PreviewTag.tags) { tag in
-				NumberedLabel(title: tag.title, iconName: tag.iconName, count: tag.count)
-					.size(.small)
-					.style(.bordered(tag.color))
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.bordered(data.color))
+					.numberedLabelSize(.small)
 			}
 		}
 		VStack(spacing: 32) {
-			ForEach(PreviewTag.tags) { tag in
-				NumberedLabel(title: tag.title, iconName: tag.iconName, count: tag.count)
-					.size(.small)
-					.style(.disabled)
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.disabled)
+					.numberedLabelSize(.small)
 			}
 		}
 	}
 	.padding()
 }
+
+#Preview("Capsule Medium", traits: .fixedLayout(width: 800, height: 350)) {
+	HStack(spacing: 32) {
+		VStack(spacing: 32) {
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.filled(data.color))
+					.numberedLabelShape(.capsule)
+			}
+		}
+		VStack(spacing: 32) {
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.tinted(data.color))
+					.numberedLabelShape(.capsule)
+			}
+		}
+		VStack(spacing: 32) {
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.bordered(data.color))
+					.numberedLabelShape(.capsule)
+			}
+		}
+		VStack(spacing: 32) {
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.disabled)
+					.numberedLabelShape(.capsule)
+			}
+		}
+	}
+	.padding()
+}
+
+#Preview("Capsule Small", traits: .fixedLayout(width: 800, height: 350)) {
+	HStack(spacing: 32) {
+		VStack(spacing: 32) {
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.filled(data.color))
+					.numberedLabelSize(.small)
+					.numberedLabelShape(.capsule)
+			}
+		}
+		VStack(spacing: 32) {
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.tinted(data.color))
+					.numberedLabelSize(.small)
+					.numberedLabelShape(.capsule)
+			}
+		}
+		VStack(spacing: 32) {
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.bordered(data.color))
+					.numberedLabelSize(.small)
+					.numberedLabelShape(.capsule)
+			}
+		}
+		VStack(spacing: 32) {
+			ForEach(PreviewData.data) { data in
+				NumberedLabel(title: data.title, iconName: data.iconName, count: data.count)
+					.numberedLabelStyle(.disabled)
+					.numberedLabelSize(.small)
+					.numberedLabelShape(.capsule)
+			}
+		}
+	}
+	.padding()
+}
+
