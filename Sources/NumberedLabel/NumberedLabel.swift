@@ -25,7 +25,6 @@ public struct NumberedLabel: View {
 			if let iconName {
 				Image(systemName: iconName)
 					.font(size.iconfont)
-					.symbolVariant(style.iconVariant)
 			}
 			if title != nil || count != nil {
 				HStack(alignment: .firstTextBaseline) {
@@ -99,7 +98,7 @@ private struct PreviewData: Identifiable {
 }
 
 
-#Preview("Medium", traits: .fixedLayout(width: 700, height: 350)) {
+#Preview("Medium", traits: .fixedLayout(width: 750, height: 350)) {
 	HStack(spacing: 32) {
 		VStack(spacing: 32) {
 			ForEach(PreviewData.data) { data in

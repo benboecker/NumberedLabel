@@ -21,7 +21,6 @@ public extension NumberedLabel {
 
 
 extension NumberedLabel.Style {
-	
 	var foregroundColor: Color {
 		switch self {
 		case .filled: Color.white
